@@ -63,20 +63,20 @@ action :create do
         action [:create_if_missing]
       end
       new_resource.updated_by_last_action(rf.updated_by_last_action?)
+      if rf.updated_by_last_action?
+        la = libarchive_file "kibana_#{kb_args[:name]}.tar.gz" do
+          path "#{Chef::Config[:file_cache_path]}/kibana_#{kb_args[:name]}.tar.gz"
+          extract_to kb_args[:install_dir]
+          owner kb_args[:user]
+          action [:extract]
+        end
+        new_resource.updated_by_last_action(la.updated_by_last_action?)
 
-      la = libarchive_file "kibana_#{kb_args[:name]}.tar.gz" do
-        path "#{Chef::Config[:file_cache_path]}/kibana_#{kb_args[:name]}.tar.gz"
-        extract_to kb_args[:install_dir]
-        owner kb_args[:user]
-        action [:extract]
+        ln = link "#{kb_args[:install_dir]}/current" do
+          to "#{kb_args[:install_dir]}/kibana-#{kb_args[:file_version]}"
+        end
+        new_resource.updated_by_last_action(ln.updated_by_last_action?)
       end
-      new_resource.updated_by_last_action(la.updated_by_last_action?)
-
-      ln = link "#{kb_args[:install_dir]}/current" do
-        to "#{kb_args[:install_dir]}/kibana-#{kb_args[:file_version]}"
-      end
-      new_resource.updated_by_last_action(ln.updated_by_last_action?)
-
       node.set['kibana'][kb_args[:name]]['web_dir'] = "#{kb_args[:install_dir]}/current"
     end
   end
